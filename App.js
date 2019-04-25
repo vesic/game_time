@@ -16,12 +16,25 @@ const UP = 'UP';
 const DOWN = 'DOWN';
 const WON = 'You won!';
 const LOSE = 'You lose!';
+const DRAW = 'Same value!'
 const CONTINUE = 'Continue';
 const NEW_DECK = 'New Deck';
 const EMPTY = '';
 const LOADING = 'Loading...';
 const YOUR_GUESS = 'Your guess?';
 const HEADER = 'Card Game';
+
+// const JACK = 'JACK';
+// const QUEEN = 'QUEEN';
+// const KING = 'KING';
+// const ACE = 'ACE';
+
+const ranking = {
+  JACK: 11,
+  QUEEN: 12,
+  KING: 13,
+  ACE: 13
+}
 
 // helper methods
 const request = async url => {
@@ -31,7 +44,13 @@ const request = async url => {
 }
 
 const log = data => JSON.stringify(data)
+
 const noop = () => { }
+
+const returnInt = value => {
+  return (ranking[value]) ? ranking[value] : value
+}
+
 
 export default class App extends Component {
 
@@ -47,7 +66,7 @@ export default class App extends Component {
   showMessage = (title, newCard) => {
     Alert.alert(
       title,
-      `Selected card was: ${newCard.value} ${newCard.suit}`,
+      `New card - ${newCard.value} ${newCard.suit}`,
       [
         { text: CONTINUE, onPress: noop },
         { text: NEW_DECK, onPress: this.newGame }
@@ -63,17 +82,22 @@ export default class App extends Component {
     const newCard = response.cards[0];
 
     if (userGuess === UP) {
-      if (newCard.code > oldCard.code) {
+      if (returnInt(newCard.value) > returnInt(oldCard.value)) {
         this.showMessage(WON, newCard)
-        return
+      } else if (returnInt(newCard.value) < returnInt(oldCard.value)) {
+        this.showMessage(LOSE, newCard)
+      } else {
+        this.showMessage(DRAW, newCard)
       }
+      return
+    }
+
+    if (returnInt(newCard.value) < returnInt(oldCard.value)) {
+      this.showMessage(WON, newCard)
+    } else if (returnInt(newCard.value) > returnInt(oldCard.value)) {
       this.showMessage(LOSE, newCard)
     } else {
-      if (newCard.code < oldCard.code) {
-        this.showMessage(WON, newCard)
-        return
-      }
-      this.showMessage(LOSE, newCard)
+      this.showMessage(DRAW, newCard)
     }
   }
 
