@@ -6,11 +6,12 @@ import {
   View,
   TouchableOpacity,
   Image,
-  Alert
+  Alert,
+  AsyncStorage
 } from 'react-native';
 
 // constants
-const API_URL = 'https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1';
+const API_URL = 'https://deckofcardsapi.com/api/deck/new/shuffle';
 const FALLBACK_URL = 'https://via.placeholder.com/226x314';
 const UP = 'UP';
 const DOWN = 'DOWN';
@@ -52,14 +53,23 @@ const returnInt = value => {
 }
 
 export default class App extends Component {
-
   state = {
     deck_id: 0,
     selectedURL: EMPTY
   }
 
   async componentDidMount() {
-    this.newGame()
+    let url;
+    const deckId = await this.retrieveDeckId();
+
+    if (deckId !== null) {
+      console.warn(log(deckId));
+      url = `https://deckofcardsapi.com/api/deck/${deckId}/shuffle`;
+    } else {
+      url = API_URL
+      console.warn('No deck id')
+    }
+    this.newGame(url)
   }
 
   showMessage = (title, newCard) => {
@@ -68,7 +78,11 @@ export default class App extends Component {
       `New card - ${newCard.value} ${newCard.suit}`,
       [
         { text: CONTINUE, onPress: noop },
-        { text: NEW_DECK, onPress: this.newGame }
+        { text: NEW_DECK, onPress: () => {
+          this.clearStorage()
+          this.newGame(API_URL)
+        }
+      }
       ],
       { cancelable: false }
     );
@@ -100,8 +114,7 @@ export default class App extends Component {
     }
   }
 
-
-  newGame = async () => {
+  newGame = async (URL) => {
     const { selectedURL } = this.state;
     if (selectedURL !== EMPTY) {
       this.setState({
@@ -110,14 +123,32 @@ export default class App extends Component {
     }
 
     try {
-      let deck = await request(API_URL)
-      let card = await request(`https://deckofcardsapi.com/api/deck/${deck.deck_id}/draw/?count=1`)
+      let deck = await request(URL)
+      let card = await request(`https://deckofcardsapi.com/api/deck/${deck.deck_id}/draw`)
       this.setState({
         deck_id: deck.deck_id,
         selectedURL: card.cards[0].images.png,
         selectedCard: card
       })
+      this.storeDeckId(deck.deck_id)
     } catch (error) { }
+  }
+
+  storeDeckId = async (deckId) => {
+    try {
+      await AsyncStorage.setItem('DECK_ID', deckId);
+      return true
+    } catch (error) {}
+  };
+
+  retrieveDeckId = async () => {
+    try {
+      return await AsyncStorage.getItem('DECK_ID');
+    } catch (error) {}
+  };
+  
+  clearStorage = () => {
+    AsyncStorage.clear()
   }
 
   render() {
@@ -131,6 +162,7 @@ export default class App extends Component {
         <View
           style={styles.hr}
         />
+
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: this.state.selectedURL || FALLBACK_URL }}
