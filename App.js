@@ -128,12 +128,19 @@ export default class App extends Component {
       <View style={styles.container}>
         <Text style={styles.header}>{HEADER}</Text>
 
+        <View
+          style={styles.hr}
+        />
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: this.state.selectedURL || FALLBACK_URL }}
             style={{ width: 226, height: 314 }}
           />
         </View>
+
+        <View
+          style={styles.hr}
+        />
 
         <Text style={styles.guess}>
           {yourGuess}
@@ -169,12 +176,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: 'center',
     paddingTop: 20,
+    paddingBottom: 20,
     fontWeight: 'bold'
   },
   guess: {
     textAlign: 'center',
     fontSize: 20,
-    paddingBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
     fontWeight: 'bold'
   },
   button: {
@@ -193,7 +202,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 10,
-    paddingBottom: 50
+    paddingBottom: 10
+  },
+  hr: {
+    borderBottomColor: 'gray',
+    borderBottomWidth: .5,
   }
 });
 
