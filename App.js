@@ -33,7 +33,7 @@ const ranking = {
   JACK: 11,
   QUEEN: 12,
   KING: 13,
-  ACE: 13
+  ACE: 14
 }
 
 // helper methods
@@ -50,7 +50,6 @@ const noop = () => { }
 const returnInt = value => {
   return (ranking[value]) ? ranking[value] : value
 }
-
 
 export default class App extends Component {
 
@@ -197,3 +196,5 @@ const styles = StyleSheet.create({
     paddingBottom: 50
   }
 });
+
+export { returnInt }
