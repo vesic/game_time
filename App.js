@@ -1,5 +1,4 @@
-
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,68 +7,60 @@ import {
   Image,
   Alert,
   AsyncStorage
-} from 'react-native';
+} from "react-native";
 
-// constants
-const API_URL = 'https://deckofcardsapi.com/api/deck/new/shuffle';
-const FALLBACK_URL = 'https://via.placeholder.com/226x314';
-const UP = 'UP';
-const DOWN = 'DOWN';
-const WON = 'You won!';
-const LOSE = 'You lose!';
-const DRAW = 'Same value!'
-const CONTINUE = 'Continue';
-const NEW_DECK = 'New Deck';
-const EMPTY = '';
-const LOADING = 'Loading...';
-const YOUR_GUESS = 'Your guess?';
-const HEADER = 'Card Game';
+const API_URL = "https://deckofcardsapi.com/api/deck/new/shuffle";
+const FALLBACK_URL = "https://via.placeholder.com/226x314";
+const UP = "UP";
+const DOWN = "DOWN";
+const WON = "You won!";
+const LOSE = "You lose!";
+const DRAW = "Same value!";
+const CONTINUE = "Continue";
+const NEW_DECK = "New Deck";
+const EMPTY = "";
+const LOADING = "Loading...";
+const YOUR_GUESS = "Your guess?";
+const HEADER = "Card Game";
+const DECK_ID = "DECK_ID";
 
-// const JACK = 'JACK';
-// const QUEEN = 'QUEEN';
-// const KING = 'KING';
-// const ACE = 'ACE';
-
-const ranking = {
+const rankings = {
   JACK: 11,
   QUEEN: 12,
   KING: 13,
   ACE: 14
-}
+};
 
-// helper methods
+// helpers
 const request = async url => {
   const response = await fetch(url);
   const json = await response.json();
-  return json
-}
+  return json;
+};
 
-const log = data => JSON.stringify(data)
+const log = data => JSON.stringify(data);
 
-const noop = () => { }
+const noop = () => {};
 
-const returnInt = value => {
-  return (ranking[value]) ? ranking[value] : value
-}
+const returnInt = value => (rankings[value] ? rankings[value] : value);
 
-export default class App extends Component {
+class App extends Component {
   state = {
     deck_id: 0,
     selectedURL: EMPTY
-  }
+  };
 
   async componentDidMount() {
     let url;
     const deckId = await this.retrieveDeckId();
 
     if (deckId !== null) {
-      console.warn(log(deckId));
       url = `https://deckofcardsapi.com/api/deck/${deckId}/shuffle`;
     } else {
-      url = API_URL
-      console.warn('No deck id')
+      url = API_URL;
     }
-    this.newGame(url)
+
+    this.newGame(url);
   }
 
   showMessage = (title, newCard) => {
@@ -78,90 +69,101 @@ export default class App extends Component {
       `New card - ${newCard.value} ${newCard.suit}`,
       [
         { text: CONTINUE, onPress: noop },
-        { text: NEW_DECK, onPress: () => {
-          this.clearStorage()
-          this.newGame(API_URL)
+        {
+          text: NEW_DECK,
+          onPress: () => {
+            this.clearStorage();
+            this.newGame(API_URL);
+          }
         }
-      }
       ],
       { cancelable: false }
     );
-  }
+  };
 
-  bet = async userGuess => {
-    const { deck_id, selectedCard } = this.state
-    let response = await request(`https://deckofcardsapi.com/api/deck/${deck_id}/draw/?count=1`)
-    const oldCard = selectedCard.cards[0];
-    const newCard = response.cards[0];
+  placeBet = async (userGuess) => {
+    const { deck_id, selectedCard } = this.state;
 
-    if (userGuess === UP) {
-      if (returnInt(newCard.value) > returnInt(oldCard.value)) {
-        this.showMessage(WON, newCard)
-      } else if (returnInt(newCard.value) < returnInt(oldCard.value)) {
-        this.showMessage(LOSE, newCard)
-      } else {
-        this.showMessage(DRAW, newCard)
+    try {
+      let response = await request(
+        `https://deckofcardsapi.com/api/deck/${deck_id}/draw`
+      );
+      const oldCard = selectedCard.cards[0];
+      const newCard = response.cards[0];
+
+      if (userGuess === UP) {
+        if (returnInt(newCard.value) > returnInt(oldCard.value)) {
+          this.showMessage(WON, newCard);
+        } else if (returnInt(newCard.value) < returnInt(oldCard.value)) {
+          this.showMessage(LOSE, newCard);
+        } else {
+          this.showMessage(DRAW, newCard);
+        }
+        return;
       }
-      return
-    }
 
-    if (returnInt(newCard.value) < returnInt(oldCard.value)) {
-      this.showMessage(WON, newCard)
-    } else if (returnInt(newCard.value) > returnInt(oldCard.value)) {
-      this.showMessage(LOSE, newCard)
-    } else {
-      this.showMessage(DRAW, newCard)
+      if (returnInt(newCard.value) < returnInt(oldCard.value)) {
+        this.showMessage(WON, newCard);
+      } else if (returnInt(newCard.value) > returnInt(oldCard.value)) {
+        this.showMessage(LOSE, newCard);
+      } else {
+        this.showMessage(DRAW, newCard);
+      }
+    } catch (error) {
+      Alert.alert("Error getting data!");
     }
-  }
+  };
 
-  newGame = async (URL) => {
+  newGame = async (url) => {
     const { selectedURL } = this.state;
     if (selectedURL !== EMPTY) {
       this.setState({
         selectedURL: EMPTY
-      })
+      });
     }
 
     try {
-      let deck = await request(URL)
-      let card = await request(`https://deckofcardsapi.com/api/deck/${deck.deck_id}/draw`)
+      let deck = await request(url);
+      let card = await request(
+        `https://deckofcardsapi.com/api/deck/${deck.deck_id}/draw`
+      );
       this.setState({
         deck_id: deck.deck_id,
         selectedURL: card.cards[0].images.png,
         selectedCard: card
-      })
-      this.storeDeckId(deck.deck_id)
-    } catch (error) { }
-  }
+      });
+      this.storeDeckId(deck.deck_id);
+    } catch (error) {
+      Alert.alert("Error getting data!");
+    }
+  };
 
   storeDeckId = async (deckId) => {
     try {
-      await AsyncStorage.setItem('DECK_ID', deckId);
-      return true
+      await AsyncStorage.setItem(DECK_ID, deckId);
+      return true;
     } catch (error) {}
   };
 
   retrieveDeckId = async () => {
     try {
-      return await AsyncStorage.getItem('DECK_ID');
+      return await AsyncStorage.getItem(DECK_ID);
     } catch (error) {}
   };
-  
+
   clearStorage = () => {
-    AsyncStorage.clear()
-  }
+    AsyncStorage.clear();
+  };
 
   render() {
     const { selectedURL } = this.state;
-    const yourGuess = (selectedURL === EMPTY) ? LOADING : YOUR_GUESS;
+    const yourGuess = selectedURL === EMPTY ? LOADING : YOUR_GUESS;
 
     return (
       <View style={styles.container}>
         <Text style={styles.header}>{HEADER}</Text>
 
-        <View
-          style={styles.hr}
-        />
+        <View style={styles.hr} />
 
         <View style={styles.imageContainer}>
           <Image
@@ -170,29 +172,23 @@ export default class App extends Component {
           />
         </View>
 
-        <View
-          style={styles.hr}
-        />
+        <View style={styles.hr} />
 
-        <Text style={styles.guess}>
-          {yourGuess}
-        </Text>
+        <Text style={styles.guess}>{yourGuess}</Text>
 
         <TouchableOpacity
           disabled={selectedURL === EMPTY}
           style={styles.button}
-          onPress={
-            () => this.bet(UP)
-          }>
+          onPress={() => this.placeBet(UP)}
+        >
           <Text style={styles.buttonText}> {UP} </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           disabled={selectedURL === EMPTY}
           style={styles.button}
-          onPress={
-            () => this.bet(DOWN)
-          }>
+          onPress={() => this.placeBet(DOWN)}
+        >
           <Text style={styles.buttonText}> {DOWN} </Text>
         </TouchableOpacity>
       </View>
@@ -206,20 +202,20 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 24,
-    textAlign: 'center',
+    textAlign: "center",
     paddingTop: 20,
     paddingBottom: 20,
-    fontWeight: 'bold'
+    fontWeight: "bold"
   },
   guess: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 20,
     paddingTop: 20,
     paddingBottom: 10,
-    fontWeight: 'bold'
+    fontWeight: "bold"
   },
   button: {
-    backgroundColor: '#308834',
+    backgroundColor: "#308834",
     padding: 10,
     marginLeft: 55,
     marginRight: 55,
@@ -227,19 +223,21 @@ const styles = StyleSheet.create({
     height: 40
   },
   buttonText: {
-    color: 'white',
-    textAlign: 'center'
+    color: "white",
+    textAlign: "center"
   },
   imageContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingTop: 10,
     paddingBottom: 10
   },
   hr: {
-    borderBottomColor: 'gray',
-    borderBottomWidth: .5,
+    borderBottomColor: "gray",
+    borderBottomWidth: 0.5
   }
 });
 
-export { returnInt }
+export default App;
+// export for test
+export { returnInt };
